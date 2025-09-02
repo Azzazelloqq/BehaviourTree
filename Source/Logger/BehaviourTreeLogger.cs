@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Reflection;
 
-namespace Code.BehaviourTree.Logger
+namespace BehaviourTree.Source.Logger
 {
 public class BehaviourTreeLogger : IDisposable
 {

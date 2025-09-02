@@ -1,0 +1,6 @@
+{
+  "name": "BehaviourTree.Example",
+  "references": [
+    "BehaviourTree"
+  ]
+}
