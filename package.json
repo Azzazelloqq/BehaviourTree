@@ -1,0 +1,19 @@
+{
+  "name": "com.azzazello.bahaviourtree",
+  "version": "0.0.1",
+  "displayName": "BehaviourTree",
+  "description": "Simple Behaviour tree",
+  "unity": "2020.3",
+  "dependencies": {
+	  },
+  "keywords": [
+    "BehaviourTree",
+    "Behaviour",
+    "Tree"
+  ],
+  "author": {
+    "name": "Azzazelloqq",
+    "email": "bog22232@ya.ru",
+    "url": "https://github.com/Azzazelloqq"
+  }
+}
