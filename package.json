@@ -1,6 +1,6 @@
 {
   "name": "com.azzazello.bahaviourtree",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "displayName": "BehaviourTree",
   "description": "Simple Behaviour tree",
   "unity": "2020.3",
