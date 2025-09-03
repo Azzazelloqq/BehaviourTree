@@ -2,235 +2,271 @@ using System;
 using BehaviourTree.Source;
 using BehaviourTree.Source.Logger;
 using BehaviourTree.Source.Nodes;
+using BehaviourTree.Example.Agents;
+using BehaviourTree.Example.Agents.Base;
+using BehaviourTree.Example.Nodes.Actions;
+using BehaviourTree.Example.Nodes.Conditions;
 using UnityEngine;
 
 namespace BehaviourTree.Example
 {
-    /// <summary>
-    /// Example implementation of a simple behaviour tree for an AI agent.
-    /// Demonstrates the use of Selector, Sequence, and custom action/condition nodes.
-    /// </summary>
-    public class SimpleBehaviourTreeExample : MonoBehaviour, IBehaviourTree
-    {
-        private IBehaviourTreeNode _rootNode;
-        private BehaviourTreeLogger _logger;
+/// <summary>
+/// Simple example implementation of a behaviour tree for an AI agent using agent-based pattern.
+/// Demonstrates the use of Selector, Sequence, and custom action/condition nodes with agents.
+/// </summary>
+public class SimpleBehaviourTreeExample : MonoBehaviour, IBehaviourTree
+{
+	private IBehaviourTreeNode _rootNode;
+	private SimpleAIAgent _agent;
+	private BehaviourTreeLogger _logger;
 
-        private void Start()
-        {
-            InitializeBehaviourTree();
-        }
+	[Header("Configuration")]
+	[SerializeField] private bool _enableLogging = true;
+	[SerializeField] private string _agentName = "SimpleAI";
 
-        /// <summary>
-        /// Initializes the behaviour tree structure with nodes.
-        /// Creates a tree that represents an AI agent's decision-making process.
-        /// </summary>
-        private void InitializeBehaviourTree()
-        {
-            // Setup logger for debugging
-            var loggerSettings = new LoggerSettings("[BT]", "", Debug.Log);
-            _logger = new BehaviourTreeLogger(loggerSettings);
+	private void Start()
+	{
+		InitializeBehaviourTree();
+	}
 
-            // Build the behaviour tree
-            _rootNode = new SelectorNode(new IBehaviourTreeNode[]
-            {
-                // First priority: Check if health is critical and heal
-                new SequenceNode(new IBehaviourTreeNode[]
-                {
-                    new HealthCheckNode(20), // Check if health is below 20
-                    new HealActionNode()     // Perform healing
-                }),
-                
-                // Second priority: Attack if enemy is in range
-                new SequenceNode(new IBehaviourTreeNode[]
-                {
-                    new EnemyInRangeNode(10f), // Check if enemy within 10 units
-                    new AttackActionNode()      // Attack the enemy
-                }),
-                
-                // Default: Patrol
-                new PatrolActionNode()
-            });
+	/// <summary>
+	/// Initializes the behaviour tree structure with nodes using agent-based pattern.
+	/// Creates a tree that represents an AI agent's decision-making process.
+	/// </summary>
+	private void InitializeBehaviourTree()
+	{
+		// Create the agent
+		_agent = new SimpleAIAgent(_agentName);
+		
+		// Build the behaviour tree
+		_rootNode = new SelectorNode(new IBehaviourTreeNode[]
+		{
+			// First priority: Check if health is critical and heal
+			new SequenceNode(new IBehaviourTreeNode[]
+			{
+				new HealthCriticalNode(_agent, 20f), // Check if health is below 20
+				new HealNode(_agent)                  // Perform healing
+			}),
+			
+			// Second priority: Attack if enemy is in range
+			new SequenceNode(new IBehaviourTreeNode[]
+			{
+				new HasTargetNode(_agent),                // Check if has target
+				new TargetInRangeNode(_agent, 10f),      // Check if enemy within 10 units
+				new SimpleAttackNode(_agent)              // Attack the enemy
+			}),
+			
+			// Default: Patrol
+			new SimplePatrolNode()
+		});
 
-            // Wrap with logging for debugging
-            _rootNode = _logger.WrapWithLogging(_rootNode);
-        }
+		// Setup logger for debugging if enabled
+		if (_enableLogging)
+		{
+			var loggerSettings = new LoggerSettings($"[{_agentName}]", "", Debug.Log);
+			_logger = new BehaviourTreeLogger(loggerSettings);
+			_rootNode = _logger.WrapWithLogging(_rootNode);
+		}
+	}
 
-        /// <summary>
-        /// Executes one tick of the behaviour tree.
-        /// Should be called regularly (e.g., in Update or FixedUpdate).
-        /// </summary>
-        public void Tick()
-        {
-            _rootNode?.Tick();
-        }
+	/// <inheritdoc/>
+	public void Tick()
+	{
+		_rootNode?.Tick();
+	}
 
-        private void Update()
-        {
-            // Execute behaviour tree every frame
-            Tick();
-        }
+	private void Update()
+	{
+		// Update agent state
+		_agent?.Update(Time.deltaTime);
+		
+		// Execute behaviour tree every frame
+		Tick();
+	}
 
-        public void Dispose()
-        {
-            _rootNode?.Dispose();
-            _logger?.Dispose();
-        }
+	/// <inheritdoc/>
+	public void Dispose()
+	{
+		_rootNode?.Dispose();
+		_agent?.Dispose();
+		_logger?.Dispose();
+	}
 
-        private void OnDestroy()
-        {
-            Dispose();
-        }
-    }
-
-    /// <summary>
-    /// Condition node that checks if health is below a threshold.
-    /// </summary>
-    public class HealthCheckNode : IBehaviourTreeNode
-    {
-        private readonly float _healthThreshold;
-        private float _currentHealth = 100f; // Simulated health
-
-        public HealthCheckNode(float healthThreshold)
-        {
-            _healthThreshold = healthThreshold;
-        }
-
-        public NodeState Tick()
-        {
-            // Simulate health decrease
-            _currentHealth -= Time.deltaTime * 5f;
-            
-            if (_currentHealth < _healthThreshold)
-            {
-                Debug.Log($"Health critical: {_currentHealth:F1}");
-                return NodeState.Success;
-            }
-            
-            return NodeState.Failure;
-        }
-
-        public void Dispose()
-        {
-            // Cleanup if needed
-        }
-    }
-
-    /// <summary>
-    /// Action node that performs healing.
-    /// </summary>
-    public class HealActionNode : IBehaviourTreeNode
-    {
-        private float _healingTime = 0f;
-        private const float HealDuration = 2f;
-
-        public NodeState Tick()
-        {
-            _healingTime += Time.deltaTime;
-            
-            if (_healingTime < HealDuration)
-            {
-                Debug.Log($"Healing... {_healingTime:F1}/{HealDuration}s");
-                return NodeState.Running;
-            }
-            
-            Debug.Log("Healing complete!");
-            _healingTime = 0f;
-            return NodeState.Success;
-        }
-
-        public void Dispose()
-        {
-            // Cleanup if needed
-        }
-    }
-
-    /// <summary>
-    /// Condition node that checks if an enemy is within range.
-    /// </summary>
-    public class EnemyInRangeNode : IBehaviourTreeNode
-    {
-        private readonly float _detectionRange;
-
-        public EnemyInRangeNode(float detectionRange)
-        {
-            _detectionRange = detectionRange;
-        }
-
-        public NodeState Tick()
-        {
-            // Simulate enemy detection
-            var enemies = Physics.OverlapSphere(Vector3.zero, _detectionRange);
-            
-            if (enemies.Length > 0)
-            {
-                Debug.Log($"Enemy detected within {_detectionRange} units!");
-                return NodeState.Success;
-            }
-            
-            return NodeState.Failure;
-        }
-
-        public void Dispose()
-        {
-            // Cleanup if needed
-        }
-    }
-
-    /// <summary>
-    /// Action node that performs an attack.
-    /// </summary>
-    public class AttackActionNode : IBehaviourTreeNode
-    {
-        private float _attackCooldown = 0f;
-        private const float AttackRate = 1f;
-
-        public NodeState Tick()
-        {
-            _attackCooldown -= Time.deltaTime;
-            
-            if (_attackCooldown <= 0f)
-            {
-                Debug.Log("Attacking enemy!");
-                _attackCooldown = AttackRate;
-                return NodeState.Success;
-            }
-            
-            return NodeState.Running;
-        }
-
-        public void Dispose()
-        {
-            // Cleanup if needed
-        }
-    }
-
-    /// <summary>
-    /// Action node that performs patrolling behavior.
-    /// </summary>
-    public class PatrolActionNode : IBehaviourTreeNode
-    {
-        private float _patrolTime = 0f;
-        private const float PatrolDuration = 3f;
-
-        public NodeState Tick()
-        {
-            _patrolTime += Time.deltaTime;
-            
-            if (_patrolTime < PatrolDuration)
-            {
-                Debug.Log($"Patrolling... {_patrolTime:F1}/{PatrolDuration}s");
-                return NodeState.Running;
-            }
-            
-            Debug.Log("Patrol point reached!");
-            _patrolTime = 0f;
-            return NodeState.Success;
-        }
-
-        public void Dispose()
-        {
-            // Cleanup if needed
-        }
-    }
+	private void OnDestroy()
+	{
+		Dispose();
+	}
 }
 
+/// <summary>
+/// Simple AI agent implementation for basic behaviour tree example.
+/// </summary>
+public class SimpleAIAgent : IHealthAgent, ICombatAgent
+{
+	private float _health;
+	private float _healingTime;
+	private bool _isHealing;
+	private float _targetDistance;
+	private bool _hasTarget;
+
+	/// <inheritdoc/>
+	public string AgentName { get; }
+
+	/// <inheritdoc/>
+	public float Health => _health;
+
+	/// <inheritdoc/>
+	public float MaxHealth => 100f;
+
+	/// <inheritdoc/>
+	public bool IsHealing => _isHealing;
+
+	/// <inheritdoc/>
+	public int Ammo => 30; // Simplified - always has ammo
+
+	/// <inheritdoc/>
+	public int MaxAmmo => 30;
+
+	/// <inheritdoc/>
+	public float Stamina => 100f; // Simplified - always has stamina
+
+	/// <inheritdoc/>
+	public bool HasTarget => _hasTarget;
+
+	/// <inheritdoc/>
+	public float TargetDistance => _targetDistance;
+
+	/// <inheritdoc/>
+	public bool IsReloading => false; // Simplified - never needs reload
+
+	/// <summary>
+	/// Initializes a new instance of the SimpleAIAgent class.
+	/// </summary>
+	/// <param name="agentName">The name of the agent.</param>
+	public SimpleAIAgent(string agentName)
+	{
+		AgentName = agentName;
+		_health = MaxHealth;
+		_targetDistance = float.MaxValue;
+	}
+
+	/// <inheritdoc/>
+	public bool IsHealthCritical(float threshold)
+	{
+		return _health < threshold;
+	}
+
+	/// <inheritdoc/>
+	public void Heal()
+	{
+		if (!_isHealing)
+		{
+			_isHealing = true;
+			_healingTime = 0f;
+			Debug.Log($"[{AgentName}] Starting healing...");
+		}
+	}
+
+	/// <inheritdoc/>
+	public bool IsTargetInRange(float range)
+	{
+		return _hasTarget && _targetDistance <= range;
+	}
+
+	/// <inheritdoc/>
+	public void Reload()
+	{
+		// Not implemented in simple example
+	}
+
+	/// <summary>
+	/// Performs a simple attack action.
+	/// </summary>
+	public void Attack()
+	{
+		Debug.Log($"[{AgentName}] Attacking enemy!");
+	}
+
+	/// <summary>
+	/// Updates the agent's state.
+	/// </summary>
+	/// <param name="deltaTime">Time since last update.</param>
+	public void Update(float deltaTime)
+	{
+		// Simulate health decrease
+		_health -= deltaTime * 5f;
+		_health = Mathf.Max(0, _health);
+
+		// Update healing
+		if (_isHealing)
+		{
+			_healingTime += deltaTime;
+			_health = Mathf.Min(MaxHealth, _health + deltaTime * 10f);
+			
+			if (_healingTime >= 2f || _health >= MaxHealth)
+			{
+				_isHealing = false;
+				_healingTime = 0f;
+				Debug.Log($"[{AgentName}] Healing complete! Health: {_health:F1}");
+			}
+		}
+
+		// Simulate enemy detection (random for example)
+		if (UnityEngine.Random.Range(0f, 1f) < 0.01f)
+		{
+			_hasTarget = !_hasTarget;
+			if (_hasTarget)
+			{
+				_targetDistance = UnityEngine.Random.Range(5f, 15f);
+				Debug.Log($"[{AgentName}] Enemy detected at distance: {_targetDistance:F1}");
+			}
+		}
+	}
+
+	/// <inheritdoc/>
+	public void Dispose()
+	{
+		// Cleanup if needed
+	}
+}
+
+/// <summary>
+/// Simple attack action node for the basic example.
+/// </summary>
+public class SimpleAttackNode : IBehaviourTreeNode
+{
+	private readonly SimpleAIAgent _agent;
+	private float _attackCooldown;
+	private const float AttackRate = 1f;
+
+	/// <summary>
+	/// Initializes a new instance of the SimpleAttackNode class.
+	/// </summary>
+	/// <param name="agent">The agent that will perform the attack.</param>
+	public SimpleAttackNode(SimpleAIAgent agent)
+	{
+		_agent = agent;
+	}
+
+	/// <inheritdoc/>
+	public NodeState Tick()
+	{
+		_attackCooldown -= Time.deltaTime;
+		
+		if (_attackCooldown <= 0f)
+		{
+			_agent.Attack();
+			_attackCooldown = AttackRate;
+			return NodeState.Success;
+		}
+		
+		return NodeState.Running;
+	}
+
+	/// <inheritdoc/>
+	public void Dispose()
+	{
+		// No cleanup needed
+	}
+}
+}

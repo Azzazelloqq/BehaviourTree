@@ -3,7 +3,8 @@
   "references": [
     "BehaviourTree",
     "UnityEngine.TestRunner",
-    "UnityEditor.TestRunner"
+    "UnityEditor.TestRunner",
+    "BehaviourTree.Example"
   ],
   "includePlatforms": [
     "Editor"

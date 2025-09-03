@@ -3,6 +3,9 @@ using System.Reflection;
 
 namespace BehaviourTree.Source.Logger
 {
+/// <summary>
+/// Provides logging functionality for behaviour tree nodes by wrapping them with logging decorators.
+/// </summary>
 public class BehaviourTreeLogger : IDisposable
 {
 	private const BindingFlags Flags = BindingFlags.Instance | BindingFlags.NonPublic;
@@ -10,6 +13,10 @@ public class BehaviourTreeLogger : IDisposable
 
 	private readonly LoggerSettings _loggerSettings;
 
+	/// <summary>
+	/// Initializes a new instance of the BehaviourTreeLogger class.
+	/// </summary>
+	/// <param name="loggerSettings">The settings for configuring log output.</param>
 	public BehaviourTreeLogger(LoggerSettings loggerSettings)
 	{
 		_loggerSettings = loggerSettings;
@@ -66,8 +73,10 @@ public class BehaviourTreeLogger : IDisposable
 		field.SetValue(node, children);
 	}
 
+	/// <inheritdoc/>
 	public void Dispose()
 	{
+		// No resources to dispose
 	}
 }
 }

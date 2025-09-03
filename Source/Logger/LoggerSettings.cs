@@ -44,7 +44,6 @@ public readonly struct LoggerSettings
 	{
 		Prefix = prefix;
 		Postfix = string.Empty;
-		;
 		LogAction = logAction;
 	}
 
