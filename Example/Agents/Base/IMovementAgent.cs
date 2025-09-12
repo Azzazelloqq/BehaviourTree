@@ -60,3 +60,4 @@ public interface IMovementAgent : IBehaviourTreeAgent
 	void ScanArea();
 }
 }
+

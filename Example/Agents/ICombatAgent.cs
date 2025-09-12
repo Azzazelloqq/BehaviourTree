@@ -33,3 +33,4 @@ public interface ICombatActionsAgent : ICombatAgent
 	bool IsAiming { get; }
 }
 }
+

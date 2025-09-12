@@ -9,3 +9,4 @@ public interface ITacticalAIAgent : IHealthAgent, ICombatActionsAgent, IMovement
 {
 }
 }
+

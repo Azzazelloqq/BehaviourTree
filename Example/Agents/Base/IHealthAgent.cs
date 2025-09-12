@@ -35,3 +35,4 @@ public interface IHealthAgent : IBehaviourTreeAgent
 	bool IsHealing { get; }
 }
 }
+
